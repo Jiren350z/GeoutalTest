@@ -10,10 +10,14 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 	using Mapbox.Utils;
 	using Mapbox.Unity.Utilities;
 	using System.Collections;
+    using UnityEngine.Rendering.Universal;
 
 	public class DirectionsFactory : MonoBehaviour
 	{
-		[SerializeField]
+		public List<Vector2d> samplePoints;
+		public GameObject pin;
+
+        [SerializeField]
 		AbstractMap _map;
 
 		[SerializeField]
@@ -118,9 +122,9 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 			foreach (var point in response.Routes[0].Geometry)
 			{
 				dat.Add(Conversions.GeoToWorldPosition(point.x, point.y, _map.CenterMercator, _map.WorldRelativeScale).ToVector3xz());
-			}
+            }
 
-			var feat = new VectorFeatureUnity();
+            var feat = new VectorFeatureUnity();
 			feat.Points.Add(dat);
 
 			foreach (MeshModifier mod in MeshModifiers.Where(x => x.Active))
@@ -129,7 +133,23 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 			}
 
 			CreateGameObject(meshData);
-		}
+
+            var pathPoints = response.Routes[0].Geometry;
+            int total = pathPoints.Count;
+
+            samplePoints = new List<Vector2d>
+                {
+                    pathPoints[total / 4],
+                    pathPoints[total / 2],
+                    pathPoints[3 * total / 4]
+                };
+
+            foreach (var geoPoint in samplePoints)
+            {
+                Vector3 worldPos = Conversions.GeoToWorldPosition(geoPoint.x, geoPoint.y, _map.CenterMercator, _map.WorldRelativeScale).ToVector3xz();
+                Instantiate(pin, worldPos, Quaternion.identity);
+            }
+        }
 
 		GameObject CreateGameObject(MeshData data)
 		{
@@ -160,6 +180,12 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 			_directionsGO.AddComponent<MeshRenderer>().material = _material;
 			return _directionsGO;
 		}
-	}
+
+		private void SetPoints()
+		{
+            
+
+        }
+    }
 
 }
